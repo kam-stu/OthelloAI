@@ -1,5 +1,5 @@
 from flask import Flask, render_template 
-from routes.update import othello_bp
+from routes import othello_bp
 
 app = Flask(__name__)
 

@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, Blueprint, render_template
-
-othello_bp = Blueprint("othello", __name__)
-
+from .helper_methods.helper import *
+from . import othello_bp
 
 '''
 GET request for /start returns the following
@@ -35,7 +34,10 @@ POST request for /update takes the following in:
     {
         "board": [][],
         "curr_player": 1/2,
-        "curr_move": (x,y)
+        "curr_move": (x,y),
+        "is_ai": bool,
+        "prune": bool,
+        "max_depth": int < 10 (for speed reasons)
     }
 
 '/update' should:
@@ -60,6 +62,12 @@ def handle_move():
     board = data['board']
     curr_player = data['curr_player']
     curr_move = data['curr_move']
+    is_ai = data['is_ai']
+    prune = data['prune']
+    max_depth = data['max_depth']
+
+    if (max_depth > 10):
+        max_depth = 10
 
     # Automatically update player for next call
     if (curr_player == 1):
@@ -91,84 +99,58 @@ def handle_move():
         "valid_moves": get_valid_moves(updated_board, next_player, curr_player)
         })
 
-def update_board(board, move, player, opponent):
-    row, col = move
+'''
+GET request /check_win takes the following in:
+    {
+        "board": [8][8],
+        "score": {player: int}
+    }
 
-    board[row][col] = player # updated board will show an integer of what player controls that square
-    flips = get_flips(board, row, col, player, opponent) 
+/check_win returns the following:
+    {
+        "won": bool,
+        "winner": player if won else None
+    }
+'''
+
+@othello_bp.route('/check_win', methods=["POST"])
+def check_win():
+    data = request.get_json()
+    board = data['board']
+    score = data['score']
+
+    # win is achieved when there are no other valid moves for either player
+    player_one_moves = get_valid_moves(board, 1, 2)
+    player_two_moves = get_valid_moves(board, 2, 1)
+
+    # if both player_one and player_two returned array are empty
+    # then there are no other valid moves for this game
+    # game is over
+    if (len(player_one_moves) < 1 and len(player_two_moves) < 1):
+        has_won = True
+    else:
+        has_won = False
+
+    # default winner should be none
+    winner = None
+
+    # check if game is over; if so, get the winner
+    if has_won:
+        if score['1'] > score['2']:
+            winner = 1
+        else:
+            winner = 2
     
-    # updates all flipped pieces
-    for flip_row, flip_col in flips:
-        board[flip_row][flip_col] = player
+    if winner:
+        winning_score = score[str(winner)]
+    else:
+        winning_score = None
 
-    return board 
-
-def get_flips(board, row, col, player, opponent):
-    flips = []
-
-    if (board[row][col] != 0):
-        return flips
-
-    # list containing all possible directions (up, down, etc.)
-    directions = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)]
-    
-    # loops through all directions starting from the curr_move
-    for d_row, d_col in directions:
-        # offset row and col by the direction
-        curr_row = row + d_row
-        curr_col = col + d_col
-        
-        # temp list for holding the current indexes of pieces needing to be flipped
-        temp = []
+    return jsonify({
+        "won": has_won,
+        "winner": winner,
+        "score": winning_score
+    })
 
 
-        while (0 <= curr_row < 8 and 0 <= curr_col < 8):
-            
-            # these pieces are controlled by opponent and should be flipped
-            # add indexes in temp list
-            if board[curr_row][curr_col] == opponent:
-                temp.append((curr_row,curr_col))
-
-            # at the end of the pieces that should be flipped
-            # add all values from temp to flips and break loop
-            elif board[curr_row][curr_col] == player:
-                flips.extend(temp)
-                break
-
-            # there aren't any pieces capturable pieces
-            else:
-                break
-
-            curr_row += d_row
-            curr_col += d_col
-
-    return flips
-
-def is_valid_move(board, row, col, player, opponent):
-    if board[row][col] != 0:
-        return False
-    
-    flips = get_flips(board, row, col, player, opponent)
-    return len(flips) > 0
-
-def get_valid_moves(board,player, opponent):
-    valid = []
-
-    for row in range(8):
-        for col in range(8):
-            if is_valid_move(board, row, col, player, opponent):
-                valid.append((row, col))
-    return valid
-
-def update_score(board, player, opponent):
-    score = {player: 0, opponent: 0}
-
-    for row in range(0,8):
-        for col in range(0, 8):
-            if board[row][col] == player:
-                score[player] += 1
-            elif board[row][col] == opponent:
-                score[opponent] += 1
-
-    return score
     

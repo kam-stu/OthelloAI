@@ -17,10 +17,10 @@ def start():
     board = [[0 for i in range(8)] for x in range(8)]
 
     # Set the starting pieces
-    board[3][3] = 1
-    board[3][4] = 2
-    board[4][3] = 2
-    board[4][4] = 1
+    board[3][3] = 2
+    board[3][4] = 1
+    board[4][3] = 1
+    board[4][4] = 2
 
     return jsonify({
         "board": board,

@@ -1,9 +1,9 @@
 def update_board(board, move, player, opponent):
     row, col = move
 
-    board[row][col] = player # updated board will show an integer of what player controls that square
     flips = get_flips(board, row, col, player, opponent) 
-    
+    board[row][col] = player # add new piece
+
     # updates all flipped pieces
     for flip_row, flip_col in flips:
         board[flip_row][flip_col] = player

@@ -17,3 +17,8 @@
   font-size: 3rem;
   background-color: green;
 }
+
+.cell.valid-move {
+  cursor: pointer;
+  background-color: rgba(0,255,0,0.2);
+}

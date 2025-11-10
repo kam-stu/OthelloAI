@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, Blueprint, render_template
 from .helper_methods.helper import *
 from . import othello_bp
-
+from .ai import minimax
 '''
 GET request for /start returns the following
     {
@@ -35,9 +35,10 @@ POST request for /update takes the following in:
         "board": [][],
         "curr_player": 1/2,
         "curr_move": (x,y),
-        "is_ai": bool,
+        "ai": bool,
+        "depth": int,
         "prune": bool,
-        "max_depth": int < 10 (for speed reasons)
+        "debug": bool
     }
 
 '/update' should:
@@ -62,12 +63,10 @@ def handle_move():
     board = data['board']
     curr_player = data['curr_player']
     curr_move = data['curr_move']
-    is_ai = data['is_ai']
+    ai = data['ai']
+    depth = data['depth']
     prune = data['prune']
-    max_depth = data['max_depth']
-
-    if (max_depth > 10):
-        max_depth = 10
+    debug = data['debug']
 
     # Automatically update player for next call
     if (curr_player == 1):
@@ -91,12 +90,30 @@ def handle_move():
         next_player = curr_player
     else:
         next_player = opponent
+        opponent = curr_player
     
+    if ai:
+        while (next_player == 2):
+            ai_legal_moves = get_valid_moves(updated_board, 1, 2)
+            if (ai_legal_moves):
+                _, move = minimax(updated_board, depth, 2, 1, prune, debug, True)
+                updated_board = update_board(updated_board, move, 2, 1)
+                updated_score = update_score(updated_board, 2, 1)
+
+                opponent_valid_moves = get_valid_moves(updated_board, 1, 2)
+
+                if (len(opponent_valid_moves) == 0):
+                    next_player = 2
+                    break
+                else:
+                    next_player = 1
+                    opponent = 2
+
     return jsonify({
         "board": updated_board,
         "score": updated_score,
         "curr_player": next_player,
-        "valid_moves": get_valid_moves(updated_board, next_player, curr_player)
+        "valid_moves": get_valid_moves(updated_board, next_player, opponent)
         })
 
 '''
@@ -119,38 +136,10 @@ def check_win():
     board = data['board']
     score = data['score']
 
-    # win is achieved when there are no other valid moves for either player
-    player_one_moves = get_valid_moves(board, 1, 2)
-    player_two_moves = get_valid_moves(board, 2, 1)
-
-    # if both player_one and player_two returned array are empty
-    # then there are no other valid moves for this game
-    # game is over
-    if (len(player_one_moves) < 1 and len(player_two_moves) < 1):
-        has_won = True
-    else:
-        has_won = False
-
-    # default winner should be none
-    winner = None
-
-    # check if game is over; if so, get the winner
-    if has_won:
-        if score['1'] > score['2']:
-            winner = 1
-        else:
-            winner = 2
-    
-    if winner:
-        winning_score = score[str(winner)]
-    else:
-        winning_score = None
+    winner, winning_score = get_winner(board, score)
 
     return jsonify({
-        "won": has_won,
         "winner": winner,
         "score": winning_score
     })
-
-
     

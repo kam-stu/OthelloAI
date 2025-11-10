@@ -8,9 +8,9 @@ function PvP() {
     const [validMoves, setValidMoves] = useState([])
     const [score, setScore] = useState({ 1:0, 2:0 })
     const [prune, setPrune] = useState(false)
-    const [maxDepth, setMaxDepth] = useState(3)
+    const [maxDepth, setMaxDepth] = useState(1)
     const [suggestedMove, setSuggestedMove] = useState(null)
-
+    const [debug, setDebug] = useState(false)
     useEffect(() => {
         fetch("http://127.0.0.1:5000/othello/start")
         .then(res => res.json())
@@ -30,9 +30,10 @@ function PvP() {
                 board,
                 curr_player: currPlayer,
                 curr_move: [row, col],
-                is_ai: false,
-                prune: false,
-                max_depth: 0
+                ai: true,
+                prune: true,
+                depth: 3,
+                debug: true
             })
         })
         .then(res => res.json())
@@ -57,7 +58,8 @@ function PvP() {
                 board,
                 curr_player: currPlayer,
                 prune: prune,
-                max_depth: maxDepth
+                max_depth: maxDepth,
+                debug: debug
             })
         })
         .then(res => res.json())
@@ -81,6 +83,33 @@ function PvP() {
         <span className="pruneText">Alpha Beta Pruning</span>
     </div>
     
+    <div className="debug">
+        <label className="switch">
+            <input 
+            type="checkbox"
+            checked={debug}
+            onChange={() => setDebug(!debug)}
+            />
+            <span className="slider"></span>
+        </label>
+        <span className="debugText">Debug</span>
+    </div>
+        
+    <div className="depth">
+        <label>
+            Search Depth:&nbsp;
+            <input
+            type="number"
+            min={1}
+            max={10}
+            value={maxDepth}
+            onChange={(e) => setMaxDepth(Number(e.target.value))}
+            className="depthInput"
+            />
+        </label>
+    </div>
+
+
     {suggestedMove && (
         <div className="suggested">
             Suggested Move: ({suggestedMove[1]}, {suggestedMove[0]})

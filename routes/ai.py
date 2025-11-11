@@ -39,21 +39,32 @@ def ai_move():
     })
 
 # returns max val and the move that makes that max val
-def minimax(board, depth, player, opponent, prune, debug, maximizing, alpha, beta, root_depth=None):
+def minimax(board, depth, player, opponent, prune, debug, maximizing, alpha, beta, move_seq=None, root_depth=None):
     nodes = 1
 
     if root_depth is None:
         root_depth = depth
+    if move_seq is None:
+        move_seq = []
     
     valid_moves = get_valid_moves(board, player, opponent)
 
     if (depth == 0 or len(valid_moves) == 0):
         value = eval(board, player, opponent)
+        
         if debug:
             indent = " " * (root_depth - depth)
-            print(f"{indent}leaf => value={value}")
+            seq = []
+            for row, col in move_seq:
+                seq.append(f"({row},{col})")
+            seq = (' => ').join(seq)
+
+            if not seq:
+                seq = "(start)"
+            print(f"{indent}Sequence: {seq} | Heuristic: {value:}")
         return value, None, nodes
     
+    best_move = None
     if (maximizing):
         best_val = -float('inf')
         best_move = None 
@@ -62,7 +73,7 @@ def minimax(board, depth, player, opponent, prune, debug, maximizing, alpha, bet
             temp_board = [row[:] for row in board] # copies curr state of board
             update_board(temp_board, move, player, opponent)
 
-            val, _, child_nodes = minimax(temp_board, depth-1, opponent, player, prune, debug, False, alpha, beta, root_depth)
+            val, _, child_nodes = minimax(temp_board, depth-1, opponent, player, prune, debug, False, alpha, beta, move_seq + [move], root_depth)
             nodes += child_nodes
 
             if (val > best_val):
@@ -73,39 +84,35 @@ def minimax(board, depth, player, opponent, prune, debug, maximizing, alpha, bet
                 alpha = max(alpha, best_val)
                 if beta<=alpha:
                     break
-            
-            if (debug):
-                indent = " " * (root_depth - depth)
-                print(f"{indent}max choose {best_move} => {best_val}")
-        
-        return best_val, best_move, nodes
     
     # minimizing
     else:
-        worst_val = float('inf')
-        worst_move = None
+        best_val = float('inf')
 
         for move in valid_moves:
             temp_board = [row[:] for row in board]
             update_board(temp_board, move, player, opponent)
 
-            val, _, child_nodes = minimax(temp_board, depth-1, opponent, player, prune, debug, True, alpha, beta, root_depth)
+            val, _, child_nodes = minimax(temp_board, depth-1, opponent, player, prune, debug, True, alpha, beta, move_seq + [move], root_depth)
             nodes += child_nodes
 
-            if (val < worst_val):
-                worst_val = val 
-                worst_move = move 
+            if (val < best_val):
+                best_val = val 
+                best_move = move 
             
             if (prune):
-                beta = min(beta, worst_val)
+                beta = min(beta, best_val)
                 if (beta<=alpha):
                     break
-            
-        if (debug):
-            indent = " " * (root_depth - depth)
-            print(f"{indent}min choose {worst_move} => {worst_val}")
 
-        return worst_val, worst_move, nodes
+    if debug and depth == root_depth:
+        print("\n"+("="*50))
+        print("DEBUG Summary")
+        print("="*50)
+        print(f"Best Move: {best_move} | Best Val: {best_val}")
+        print("="*50)
+
+    return best_val, best_move, nodes
 
 def eval(board, player, opponent):
     score = update_score(board, player, opponent)
@@ -114,15 +121,15 @@ def eval(board, player, opponent):
     # bonus for heuristic
     bonus = 0
 
+    mobility = len(get_valid_moves(board, player, opponent)) - len(get_valid_moves(board, opponent, player))
+    bonus += mobility*10
+
     corners = [
         (0,0),
         (0,7),
         (7,0),
         (7,7)
     ]
-
-    mobility = len(get_valid_moves(board, player, opponent)) - len(get_valid_moves(board, opponent, player))
-    bonus += mobility*10
 
     # give additional score if piece in corner
     for row, col in corners:
@@ -184,9 +191,9 @@ def eval(board, player, opponent):
     
     # give massive bonus or loss if piece will be a win/lose condition
     if len(get_valid_moves(board, player, opponent)) == 0 and (len(get_valid_moves(board, opponent, player)) == 0):
-        if base_score < 0:
+        if base_score > 0:
             return 10000
-        elif base_score > 0:
+        elif base_score < 0:
             return -10000
         else:
             return 0

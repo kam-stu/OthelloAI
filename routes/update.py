@@ -68,13 +68,13 @@ def handle_move():
     prune = data['prune']
     debug = data['debug']
 
-    # Automatically update player for next call
+    # update player for next call
     if (curr_player == 1):
         opponent = 2
     else:
         opponent = 1
 
-    # Should return error if curr_move is out of bounds
+    # return error if curr_move is out of bounds
     if (curr_move[0] >= len(board) or curr_move[1] >= len(board[0])):
         return jsonify({"error": True, "message": f"Move out of bounds"}), 400
 
@@ -86,6 +86,8 @@ def handle_move():
 
     opponent_valid_moves = get_valid_moves(updated_board, opponent, curr_player)
 
+    # checks if the opponent has a valid move
+    # if not, curr player gets an extra turn
     if (len(opponent_valid_moves) == 0):
         next_player = curr_player
     else:
@@ -105,12 +107,17 @@ def handle_move():
                     next_player = human_player
                     break
             
+            # get move 
             _, move, count = minimax(updated_board, depth, ai_player, human_player, prune, debug, True, -float('inf'), float('inf'))
-            print(count)
+            print(f"Total Gamestate Count: {count}")
+            
             updated_board = update_board(updated_board, move, ai_player, human_player)
             updated_score = update_score(updated_board, ai_player, human_player)
 
             human_moves = get_valid_moves(updated_board, human_player, ai_player)
+
+            # check if human has moves
+            # if not, ai plays again
             if human_moves:
                 next_player = human_player
             else:
@@ -127,31 +134,3 @@ def handle_move():
         "curr_player": next_player,
         "valid_moves": get_valid_moves(updated_board, next_player, next_opponent)
         })
-
-'''
-GET request /check_win takes the following in:
-    {
-        "board": [8][8],
-        "score": {player: int}
-    }
-
-/check_win returns the following:
-    {
-        "winner": player if won else None
-        "score": int
-    }
-'''
-
-@othello_bp.route('/check_win', methods=["POST"])
-def check_win():
-    data = request.get_json()
-    board = data['board']
-    score = data['score']
-
-    winner, winning_score = get_winner(board, score)
-
-    return jsonify({
-        "winner": winner,
-        "score": winning_score
-    })
-    

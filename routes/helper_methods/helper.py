@@ -21,6 +21,7 @@ def get_flips(board, row, col, player, opponent):
     
     # loops through all directions starting from the curr_move
     for d_row, d_col in directions:
+        
         # offset row and col by the direction
         curr_row = row + d_row
         curr_col = col + d_col
@@ -78,29 +79,3 @@ def update_score(board, player, opponent):
                 score[opponent] += 1
 
     return score
-
-def get_winner(board, curr_score):
-    # win is achieved when there are no other valid moves for either player
-    player_one_moves = get_valid_moves(board, 1, 2)
-    player_two_moves = get_valid_moves(board, 2, 1)
-
-    # if both player_one and player_two returned array are empty
-    # then there are no other valid moves for this game
-    # game is over
-    if (len(player_one_moves) < 1 and len(player_two_moves) < 1):
-        is_winner = True 
-    else:
-        is_winner = False 
-    
-    winner = None
-
-    # check if game is over; if so, get the winner
-    if (is_winner):
-        if (str(winner) in curr_score):
-            winning_score = curr_score[str(winner)]
-        else:
-            winning_score = None
-    else:
-        winning_score = None 
-    
-    return winner, winning_score

@@ -58,7 +58,7 @@ def is_valid_move(board, row, col, player, opponent):
     flips = get_flips(board, row, col, player, opponent)
     return len(flips) > 0
 
-def get_valid_moves(board,player, opponent):
+def get_valid_moves(board, player, opponent):
     valid = []
 
     for row in range(8):

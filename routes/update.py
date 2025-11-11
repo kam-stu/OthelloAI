@@ -93,27 +93,39 @@ def handle_move():
         opponent = curr_player
     
     if ai:
-        while (next_player == 2):
-            ai_legal_moves = get_valid_moves(updated_board, 1, 2)
-            if (ai_legal_moves):
-                _, move = minimax(updated_board, depth, 2, 1, prune, debug, True)
-                updated_board = update_board(updated_board, move, 2, 1)
-                updated_score = update_score(updated_board, 2, 1)
-
-                opponent_valid_moves = get_valid_moves(updated_board, 1, 2)
-
-                if (len(opponent_valid_moves) == 0):
-                    next_player = 2
+        ai_player = 2
+        human_player = 1
+        while (next_player == ai_player):
+            ai_legal_moves = get_valid_moves(updated_board, ai_player, human_player)
+            if not ai_legal_moves:
+                human_moves = get_valid_moves(updated_board, human_player, ai_player)
+                if not human_moves:
                     break
                 else:
-                    next_player = 1
-                    opponent = 2
+                    next_player = human_player
+                    break
+            
+            _, move, count = minimax(updated_board, depth, ai_player, human_player, prune, debug, True, -float('inf'), float('inf'))
+            print(count)
+            updated_board = update_board(updated_board, move, ai_player, human_player)
+            updated_score = update_score(updated_board, ai_player, human_player)
+
+            human_moves = get_valid_moves(updated_board, human_player, ai_player)
+            if human_moves:
+                next_player = human_player
+            else:
+                next_player = ai_player
+
+    if next_player == 1:
+        next_opponent = 2
+    else:
+        next_opponent = 1
 
     return jsonify({
         "board": updated_board,
         "score": updated_score,
         "curr_player": next_player,
-        "valid_moves": get_valid_moves(updated_board, next_player, opponent)
+        "valid_moves": get_valid_moves(updated_board, next_player, next_opponent)
         })
 
 '''
@@ -125,8 +137,8 @@ GET request /check_win takes the following in:
 
 /check_win returns the following:
     {
-        "won": bool,
         "winner": player if won else None
+        "score": int
     }
 '''
 

@@ -30,10 +30,10 @@ function PvP() {
                 board,
                 curr_player: currPlayer,
                 curr_move: [row, col],
-                ai: true,
-                prune: true,
-                depth: 3,
-                debug: true
+                ai: false,
+                prune: null,
+                depth: null,
+                debug: null
             })
         })
         .then(res => res.json())

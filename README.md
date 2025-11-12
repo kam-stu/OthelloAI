@@ -17,3 +17,6 @@ Other resources (including GeeksForGeeks) was used for the following:
 2) Learning more about React
 3) Getting psuedo code for minimax algorithm
 4) CSS styling
+
+Unlisted YouTube video of the bot beating me with depth=6 and a bad laptop that made it take forever:
+https://youtu.be/zEh6mDHx-90
